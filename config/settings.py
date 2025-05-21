@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     # Project modules
     "accounts.apps.AccountsConfig",
     "restaurant.apps.RestaurantConfig",
+    "reservations.apps.ReservationsConfig",
 ]
 
 # =====================================
