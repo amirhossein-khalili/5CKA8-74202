@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt",
     # Project modules
     "accounts.apps.AccountsConfig",
+    "restaurant.apps.RestaurantConfig",
 ]
 
 # =====================================
