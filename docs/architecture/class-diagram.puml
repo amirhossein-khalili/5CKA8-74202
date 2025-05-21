@@ -1,5 +1,5 @@
 ' ------------------------------------------------------------
-' RESTAURANT‑RESERVATION APP – SEPARATED UML DIAGRAMS
+' RESTAURANT-RESERVATION APP – SEPARATED UML DIAGRAMS (+ Auth)
 ' ------------------------------------------------------------
 ' Each @startuml block below is an independent diagram that you
 ' can render separately in any PlantUML viewer.
@@ -100,7 +100,7 @@ BookingController --> ReservationDTO : returns
 ' ------------------------------------------------------------
 
 @startuml ERD_RestaurantReservation
-' Entity‑Relationship Diagram (crow's‑foot) – Persistence Model
+' Entity-Relationship Diagram (crow's-foot) – Persistence Model
 hide circle
 skinparam linetype ortho
 
@@ -143,4 +143,62 @@ restaurant ||--o{ table : has
 table ||--o{ seat : contains
 app_user ||--o{ reservation : makes
 table ||--o{ reservation : allocated
+@enduml
+
+' ------------------------------------------------------------
+
+@startuml Auth_Model
+' Authentication / Authorization Layer (JWT)
+skinparam linetype ortho
+skinparam defaultFontName Monospaced
+
+interface PasswordEncoder {
+  + encode(rawPassword: String): String
+  + matches(rawPassword: String, encoded: String): boolean
+}
+
+class JWTService {
+  - secretKey: String
+  - expiration: Duration
+  + generateToken(user: User): String
+  + validateToken(token: String): boolean
+  + extractUsername(token: String): String
+}
+
+class UserService {
+  + createUser(request: SignUpRequest): User
+  + loadUserByUsername(username: String): User
+}
+
+class AuthenticationFacadeService {
+  - userService: UserService
+  - passwordEncoder: PasswordEncoder
+  - jwtService: JWTService
+  + signUp(request: SignUpRequest): AuthResponse
+  + signIn(request: SignInRequest): AuthResponse
+}
+
+class SignUpRequest {
+  username: String
+  email: String
+  password: String
+}
+
+class SignInRequest {
+  username: String
+  password: String
+}
+
+class AuthResponse {
+  accessToken: String
+  tokenType: String = "Bearer"
+  expiresIn: long
+}
+
+' Relationships
+AuthenticationFacadeService --> UserService : uses
+AuthenticationFacadeService --> PasswordEncoder : hashes
+AuthenticationFacadeService --> JWTService : issues tokens
+UserService --> User : manages
+JWTService --|> PasswordEncoder : (optional) if signing algo needs
 @enduml
