@@ -55,7 +55,7 @@ MIDDLEWARE = [
 # =====================================
 # URL CONFIGURATION
 # =====================================
-ROOT_URLCONF = "core.urls"
+ROOT_URLCONF = "config.urls"
 
 # =====================================
 # TEMPLATES
@@ -78,7 +78,7 @@ TEMPLATES = [
 # =====================================
 # WSGI
 # =====================================
-WSGI_APPLICATION = "core.wsgi.application"
+WSGI_APPLICATION = "config.wsgi.application"
 
 # =====================================
 # DATABASES (PostgreSQL)
