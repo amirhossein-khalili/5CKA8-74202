@@ -1,0 +1,146 @@
+' ------------------------------------------------------------
+' RESTAURANT‑RESERVATION APP – SEPARATED UML DIAGRAMS
+' ------------------------------------------------------------
+' Each @startuml block below is an independent diagram that you
+' can render separately in any PlantUML viewer.
+' ------------------------------------------------------------
+
+@startuml Domain_Model
+' Domain / Core Entities
+class Restaurant {
+  - id: int
+  - name: String
+  + getAvailableTables(timeWindow): List<Table>
+}
+
+class Table {
+  - id: int
+  - seats: int  ' 4..10
+  + isAvailable(timeWindow): boolean
+}
+
+class Seat {
+  - number: int
+  - isBooked: boolean
+}
+
+class User {
+  - id: int
+  - name: String
+  - email: String
+  - passwordHash: String
+}
+
+class Reservation {
+  - id: int
+  - numSeats: int
+  - cost: Money
+  - createdAt: DateTime
+}
+
+enum ReservationStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+}
+
+' Relationships (domain)
+Restaurant "1" o-- "*" Table : has
+Table "1" o-- "*" Seat  : contains
+User "1" o-- "*" Reservation : makes
+Table "1" o-- "*" Reservation : allocated
+Reservation --> ReservationStatus
+@enduml
+
+' ------------------------------------------------------------
+
+@startuml Service_Model
+' Application / Service Layer
+abstract class PricingStrategy {
+  + calculateCost(request: BookingRequest, table: Table): Money
+}
+
+class DefaultPricingStrategy
+PricingStrategy <|-- DefaultPricingStrategy
+
+class BookingRequest {
+  - numPeople: int
+  - reservationTime: DateTime
+}
+
+class ReservationService {
+  - pricingStrategy: PricingStrategy
+  + book(request: BookingRequest, user: User): Reservation
+  + cancel(reservationId: int, user: User): void
+}
+
+ReservationService --> PricingStrategy : uses
+ReservationService --> BookingRequest : <<input>>
+ReservationService --> Reservation : <<output>>
+@enduml
+
+' ------------------------------------------------------------
+
+@startuml API_Model
+' Controller / DTO Layer
+interface BookingController {
+  + POST /book(requestBody): ReservationDTO
+  + POST /cancel(reservationId): void
+}
+
+class ReservationDTO {
+  tableId: int
+  numSeats: int
+  cost: Money
+}
+
+BookingController --> ReservationDTO : returns
+@enduml
+
+' ------------------------------------------------------------
+
+@startuml ERD_RestaurantReservation
+' Entity‑Relationship Diagram (crow's‑foot) – Persistence Model
+hide circle
+skinparam linetype ortho
+
+entity "Restaurant" as restaurant {
+  *id : int <<PK>>
+  name : varchar
+}
+
+entity "Table" as table {
+  *id : int <<PK>>
+  restaurant_id : int <<FK>>
+  seats : int
+}
+
+entity "Seat" as seat {
+  *id : int <<PK>>
+  table_id : int <<FK>>
+  number : int
+  is_booked : boolean
+}
+
+entity "User" as app_user {
+  *id : int <<PK>>
+  name : varchar
+  email : varchar
+  password_hash : varchar
+}
+
+entity "Reservation" as reservation {
+  *id : int <<PK>>
+  user_id : int <<FK>>
+  table_id : int <<FK>>
+  num_seats : int
+  cost : decimal
+  status : varchar
+  created_at : datetime
+}
+
+restaurant ||--o{ table : has
+table ||--o{ seat : contains
+app_user ||--o{ reservation : makes
+table ||--o{ reservation : allocated
+@enduml
