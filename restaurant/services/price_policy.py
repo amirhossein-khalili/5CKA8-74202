@@ -26,11 +26,4 @@ class DefaultPricingPolicy(PricingPolicy):
         self.seat_price = seat_price
 
     def calculate(self, table: Table, party_size: int) -> float:
-        # determine billing seats
-        # if party_size equals table capacity or party fills table, charge full table-1 seats
-        if party_size >= table.seats:
-            billing_units = table.seats - 1
-        else:
-            billing_units = party_size
-
-        return billing_units * self.seat_price
+        return (int(table.seats) - 1) * self.seat_price

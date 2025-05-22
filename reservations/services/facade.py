@@ -27,7 +27,6 @@ class ReservationFacadeService:
         self.table_selector = table_selector or DefaultTableSelectionStrategy(
             repo=self.res_repo
         )
-        # you might pull seat_price from settings instead of hard-coding 10
         self.pricing = pricing_policy or DefaultPricingPolicy(seat_price=10)
 
     def book(self, data, user, context=None):
@@ -66,7 +65,6 @@ class ReservationFacadeService:
 
         # 6) return whatever your view wants to show
         return {
-            "detail": "res",
+            "detail": f"you reserved table {reservation.table.id} successfully.",
             "restaurant": {"id": restaurant.id, "name": restaurant.name},
-            "payload": payload,
         }

@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import List
 
-from reservations.models import Reservation
+from reservations.models import Reservation, ReservationStatus
 
 
 class ReservationRepo:
@@ -20,6 +20,7 @@ class ReservationRepo:
                 table__restaurant_id=restaurant_id,
                 reservation_time__lt=end_dt,
                 end_time__gt=start_dt,
+                status=ReservationStatus.CONFIRMED,
             )
         )
 
