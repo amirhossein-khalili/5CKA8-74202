@@ -1,71 +1,83 @@
-from decimal import Decimal
-
-from django.conf import settings
 from rest_framework import permissions, status
+from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from reservations.models import Reservation
-from reservations.serializers import (
-    BookingRequestSerializer,
-    CancelReservationSerializer,
-    ReservationSerializer,
-)
-from reservations.services import (
-    BookingRequest,
-    DefaultPricingStrategy,
-    ReservationService,
-)
-from restaurant.models import Restaurant
+from reservations.repos.repository import ReservationRepo
+from reservations.serializers import ReservationRequestSerializer
+from restaurant.repos.repository import RestaurantRepo
+from restaurant.services.price_policy import DefaultPricingPolicy
+from restaurant.services.table_selection import DefaultTableSelectionStrategy
+from utils.build_reservation_datetimes import build_reservation_datetimes
 
 
 class BookReservationView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
-    def post(self, request):
-        serializer = BookingRequestSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        data = serializer.validated_data
-        print("inja1")
-        restaurant = Restaurant.objects.get(id=data["restaurant_id"])
-        user = request.user
-        num_people = data["num_people"]
-        reservation_time = data["reservation_time"]
-        duration = data.get("duration_hours", 2)
+    def post(self, request, *args, **kwargs):
 
-        price_per_seat = getattr(settings, "PRICE_PER_SEAT", Decimal("10.00"))
-        strategy = DefaultPricingStrategy(price_per_seat=price_per_seat)
-        service = ReservationService(pricing_strategy=strategy)
-
-        booking_req = BookingRequest(
-            restaurant=restaurant,
-            user=user,
-            num_people=num_people,
-            reservation_time=reservation_time,
-            duration_hours=duration,
+        ### ------> serilize and validate data
+        serializer = ReservationRequestSerializer(
+            data=request.data, context={"request": request}
         )
+        serializer.is_valid(raise_exception=True)
+        payload = serializer.validated_data
+
+        ### ------> check resturaunt and its existence
         try:
-            reservation = service.book(booking_req)
-        except ValueError as e:
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            restaurant = RestaurantRepo.findById(payload["restaurant_id"])
+            if restaurant is None:
+                raise NotFound("Restaurant not found.")
+        except NotFound as e:
+            raise e
 
-        output = ReservationSerializer(reservation)
-        return Response(output.data, status=status.HTTP_201_CREATED)
-
-
-class CancelReservationView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
-
-    def post(self, request):
-        serializer = CancelReservationSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        reservation = Reservation.objects.get(
-            id=serializer.validated_data["reservation_id"]
+        ### ------> converting time
+        start_dt, end_dt = build_reservation_datetimes(
+            request.data["reservation_date"],
+            request.data["reservation_time"],
+            float(request.data["duration_hours"]),
         )
 
-        service = ReservationService(
-            pricing_strategy=DefaultPricingStrategy(Decimal("0"))
-        )
-        service.cancel(reservation)
+        selection = DefaultTableSelectionStrategy(repo=ReservationRepo())
+        pricing = DefaultPricingPolicy(seat_price=10)
 
-        return Response({"detail": "Reservation cancelled."}, status=status.HTTP_200_OK)
+        table = selection.find_by_restaurant_and_time(
+            payload["restaurant_id"], start_dt, end_dt, payload["party_size"]
+        )
+        if not table:
+            raise NotFound("Table not found.")
+
+        cost = pricing.calculate(table, payload["party_size"])
+        res = ReservationRepo.createReservation(
+            request.user, table, payload["party_size"], cost, start_dt, end_dt
+        )
+
+        return Response(
+            {
+                "detail": "res",
+                "restaurant": {
+                    "id": restaurant.id,
+                    "name": restaurant.name,
+                },
+                "payload": payload,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+# class CancelReservationView(APIView):
+#     permission_classes = [permissions.IsAuthenticated]
+
+#     def post(self, request):
+#         serializer = CancelReservationSerializer(data=request.data)
+#         serializer.is_valid(raise_exception=True)
+#         reservation = Reservation.objects.get(
+#             id=serializer.validated_data["reservation_id"]
+#         )
+
+#         service = ReservationService(
+#             # pricing_strategy=DefaultPricingStrategy(Decimal("0"))
+#         )
+#         service.cancel(reservation)
+
+#         return Response({"detail": "Reservation cancelled."}, status=status.HTTP_200_OK)
