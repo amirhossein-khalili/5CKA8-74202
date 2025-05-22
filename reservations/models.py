@@ -7,7 +7,6 @@ from django.utils import timezone as dj_timezone
 from restaurant.models import Table
 
 class ReservationStatus(models.TextChoices):
-    PENDING = "PENDING", "Pending"
     CONFIRMED = "CONFIRMED", "Confirmed"
     CANCELLED = "CANCELLED", "Cancelled"
 
@@ -28,7 +27,7 @@ class Reservation(models.Model):
     status = models.CharField(
         max_length=10,
         choices=ReservationStatus.choices,
-        default=ReservationStatus.PENDING,
+        default=ReservationStatus.CONFIRMED,
     )
     created_at = models.DateTimeField(auto_now_add=True)
     reservation_time = models.DateTimeField(help_text="Start time of the reservation")

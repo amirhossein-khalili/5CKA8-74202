@@ -8,7 +8,7 @@ User = get_user_model()
 
 class SignUpViewTests(APITestCase):
     def setUp(self):
-        self.url = reverse("accounts:signup")  # adjust namespace if needed
+        self.url = reverse("accounts:signup")
 
     def test_signup_success(self):
         data = {"username": "newuser", "password": "ComplexPass123!"}

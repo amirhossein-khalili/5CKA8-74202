@@ -21,7 +21,7 @@ class Migration(migrations.Migration):
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('num_seats', models.PositiveIntegerField(help_text='Number of seats reserved')),
                 ('cost', models.DecimalField(decimal_places=2, max_digits=10)),
-                ('status', models.CharField(choices=[('PENDING', 'Pending'), ('CONFIRMED', 'Confirmed'), ('CANCELLED', 'Cancelled')], default='PENDING', max_length=10)),
+                ('status', models.CharField(choices=[('CONFIRMED', 'Confirmed'), ('CANCELLED', 'Cancelled')], default='CONFIRMED', max_length=10)),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
                 ('reservation_time', models.DateTimeField(help_text='Start time of the reservation')),
                 ('end_time', models.DateTimeField(help_text='End time of the reservation')),
