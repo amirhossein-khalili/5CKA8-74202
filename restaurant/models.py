@@ -1,6 +1,5 @@
 from datetime import datetime
 
-from django.apps import apps
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
@@ -17,21 +16,9 @@ class Restaurant(models.Model):
         return self.name
 
     def get_available_tables(self, start_time: datetime, end_time: datetime):
-        """
-        Returns a queryset of Tables without conflicting reservations in the given window.
-        """
-        return (
-            self.tables.filter(
-                reservations__reservation_time__gte=start_time,
-                reservations__reservation_time__lt=end_time,
-            )
-            .distinct()
-            .exclude(
-                reservations__status=apps.get_model(
-                    "reservations", "ReservationStatus"
-                ).CANCELLED
-            )
-        )
+        # from reservations.models import Reservation
+
+        return self.tables.filter(is_available=True)
 
 
 class Table(models.Model):
@@ -49,21 +36,10 @@ class Table(models.Model):
         validators=[MinValueValidator(4), MaxValueValidator(10)],
         help_text="Number of seats at this table (min 4, max 10)",
     )
+    is_available = models.BooleanField(
+        default=True, help_text="Is the table available for booking?"
+    )
 
     class Meta:
         unique_together = ("restaurant", "number")
         ordering = ["restaurant", "number"]
-
-    def __str__(self):
-        return f"{self.restaurant.name} - Table {self.number} ({self.seats} seats)"
-
-    def is_available(self, start_time: datetime, end_time: datetime) -> bool:
-        """
-        Returns True if no active (non-cancelled) reservations exist that overlap the window.
-        """
-        Reservation = apps.get_model("reservations", "Reservation")
-        ReservationStatus = apps.get_model("reservations", "ReservationStatus")
-        conflicts = Reservation.objects.filter(
-            table=self, reservation_time__gte=start_time, reservation_time__lt=end_time
-        ).exclude(status=ReservationStatus.CANCELLED)
-        return not conflicts.exists()

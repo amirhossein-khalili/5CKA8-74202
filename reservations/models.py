@@ -1,8 +1,10 @@
+from datetime import timedelta
+
 from django.conf import settings
 from django.db import models
+from django.utils import timezone as dj_timezone
 
 from restaurant.models import Table
-
 
 class ReservationStatus(models.TextChoices):
     PENDING = "PENDING", "Pending"
@@ -13,7 +15,6 @@ class ReservationStatus(models.TextChoices):
 class Reservation(models.Model):
     """
     Represents a reservation made by a user for a specific table.
-    Status uses TextChoices for predefined statuses.
     """
 
     user = models.ForeignKey(
@@ -31,9 +32,13 @@ class Reservation(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True)
     reservation_time = models.DateTimeField(help_text="Start time of the reservation")
+    end_time = models.DateTimeField(help_text="End time of the reservation")
 
     class Meta:
         ordering = ["-reservation_time", "table"]
 
-    def __str__(self):
-        return f"Reservation {self.id} by {self.user} for Table {self.table.number} ({self.status})"
+    def __str__(self) -> str:
+        return (
+            f"Reservation {self.id} by {self.user} for Table {self.table.number} "
+            f"({self.status})"
+        )
