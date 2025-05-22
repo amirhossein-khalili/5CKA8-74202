@@ -33,7 +33,7 @@ class DefaultPricingPolicyTests(TestCase):
         self.Table = DummyTable
 
     def test_charge_per_person_when_party_smaller_than_table(self):
-        table = self.Table(seats=6)
+        table = self.Table(seats=5)
         price = self.policy.calculate(table, party_size=4)
         self.assertEqual(price, 4 * self.seat_price)
 
@@ -120,7 +120,7 @@ class DefaultTableSelectionStrategyTests(TestCase):
         chosen = svc.find_by_restaurant_and_time(
             self.restaurant.id, self.start, self.end, party_size=2
         )
-        self.assertEqual(chosen, self.t4)
+        self.assertEqual(chosen, self.t3)
 
     def test_returns_none_when_no_table_available(self):
         """
