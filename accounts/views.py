@@ -1,3 +1,4 @@
+from django.forms import ValidationError
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
@@ -67,5 +68,14 @@ class SignInView(APIView):
         },
     )
     def post(self, request):
-        tokens = _facade.sign_in(request.data, context={"request": request})
-        return Response(tokens)
+        try:
+            tokens = _facade.sign_in(request.data, context={"request": request})
+            return Response(tokens, status=status.HTTP_200_OK)
+        except ValidationError as exc:
+            return Response(
+                {"authorization": exc.detail}, status=status.HTTP_401_UNAUTHORIZED
+            )
+        except:
+            return Response(
+                {"authorization": "error"}, status=status.HTTP_401_UNAUTHORIZED
+            )
