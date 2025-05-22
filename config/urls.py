@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.urls import include, path, re_path
 
-from constants.swagger import schema_view
+from docs.swagger.swagger_config import schema_view
 
 urlpatterns = [
     path("admin/", admin.site.urls),
