@@ -1,0 +1,64 @@
+@startuml
+
+' Repository
+class ReservationRepo {
+    +findByRestaurantAndInterval(restaurant_id: int, start_dt: datetime, end_dt: datetime): List<Reservation>
+    +createReservation(user, table, num_seats: int, cost, start_dt: datetime, end_dt: datetime): Reservation
+}
+class RestaurantRepo {
+    +findById(id: int): Restaurant
+}
+
+' Pricing Policy
+interface PricingPolicy {
+    +calculate(table: Table, party_size: int): float
+}
+class DefaultPricingPolicy {
+    -seat_price: float
+    +calculate(table: Table, party_size: int): float
+}
+PricingPolicy <|.. DefaultPricingPolicy
+
+' Table Selection Strategy
+interface TableSelectionStrategy {
+    +find_by_restaurant_and_time(restaurant_id: int, start_dt: datetime, end_dt: datetime, party_size: int): Table?
+}
+class DefaultTableSelectionStrategy {
+    -repo: ReservationRepo
+    +find_by_restaurant_and_time(restaurant_id: int, start_dt: datetime, end_dt: datetime, party_size: int): Table?
+}
+TableSelectionStrategy <|.. DefaultTableSelectionStrategy
+
+' Facade Service
+class ReservationFacadeService {
+    -res_repo: ReservationRepo
+    -rest_repo: RestaurantRepo
+    -table_selector: TableSelectionStrategy
+    -pricing: PricingPolicy
+    +book(data, user, context): dict
+    +cancel_reservation(reservation_id: int, user): str
+}
+ReservationFacadeService --> ReservationRepo : uses
+ReservationFacadeService --> RestaurantRepo : uses
+ReservationFacadeService --> TableSelectionStrategy : uses
+ReservationFacadeService --> PricingPolicy : uses
+
+' Serializers
+class ReservationRequestSerializer <<Serializer>> {
+}
+class CancelReservationSerializer <<Serializer>> {
+}
+ReservationFacadeService --> ReservationRequestSerializer : uses
+ReservationFacadeService --> CancelReservationSerializer : uses
+
+' Views
+class BookReservationView <<APIView>> {
+    +post(request)
+}
+class CancelReservationView <<APIView>> {
+    +post(request)
+}
+BookReservationView ..> ReservationFacadeService : uses
+CancelReservationView ..> ReservationFacadeService : uses
+
+@enduml

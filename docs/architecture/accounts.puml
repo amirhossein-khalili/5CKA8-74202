@@ -1,0 +1,46 @@
+@startuml
+
+' Django Views
+class SignUpView <<APIView>> {
+    +post(request)
+}
+class SignInView <<APIView>> {
+    +post(request)
+}
+SignUpView ..> AuthenticationFacadeService : uses
+SignInView ..> AuthenticationFacadeService : uses
+
+' Services
+class JWTService {
+    +generate_tokens(user)
+    +validate_token(token)
+}
+class AuthenticationFacadeService {
+    -signup_serializer_class
+    -signin_serializer_class
+    +sign_up(data, context)
+    +sign_in(data, context)
+}
+AuthenticationFacadeService ..> JWTService : calls
+AuthenticationFacadeService --> SignUpSerializer : uses
+AuthenticationFacadeService --> SignInSerializer : uses
+
+' Serializers
+class SignUpSerializer <<ModelSerializer>> {
+    -password: CharField
+    +validate_password(value)
+    +create(validated_data)
+}
+class SignInSerializer <<Serializer>> {
+    -username: CharField
+    -password: CharField
+    +validate(attrs)
+}
+class AuthResponseSerializer <<Serializer>> {
+    -access: CharField
+    -refresh: CharField
+    -token_type: CharField
+    -expires_in: IntegerField
+}
+
+@enduml
