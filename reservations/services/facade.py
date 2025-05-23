@@ -1,5 +1,6 @@
-from rest_framework.exceptions import NotFound
+from rest_framework.exceptions import NotFound, PermissionDenied
 
+from reservations.models import Reservation, ReservationStatus
 from reservations.repos.repository import ReservationRepo
 from reservations.serializers import ReservationRequestSerializer
 from restaurant.repos.repository import RestaurantRepo
@@ -67,4 +68,43 @@ class ReservationFacadeService:
         return {
             "detail": f"you reserved table {reservation.table.id} successfully.",
             "restaurant": {"id": restaurant.id, "name": restaurant.name},
+            "reservation": {
+                "id": reservation.id,
+                "start_time": reservation.reservation_time,
+                "end_time": reservation.end_time,
+            },
         }
+
+    def cancel_reservation(self, reservation_id: int, user) -> str:
+        """
+        Cancels a reservation if the user is authorized and the reservation meets cancellation criteria.
+
+        Args:
+            reservation_id: The ID of the reservation to cancel.
+            user: The user attempting to cancel the reservation.
+
+        Returns:
+            A string message indicating the result of the cancellation.
+
+        Raises:
+            Reservation.DoesNotExist: If the reservation is not found.
+            PermissionDenied: If the user is not authorized to cancel the reservation
+                              or if cancellation is not allowed by business rules.
+        """
+        try:
+            reservation = Reservation.objects.get(id=reservation_id)
+        except Reservation.DoesNotExist:
+            raise
+
+        if reservation.user != user:
+            raise PermissionDenied(
+                "You do not have permission to cancel this reservation."
+            )
+
+        if reservation.status == ReservationStatus.CANCELLED:
+            return "Reservation is already cancelled."
+
+        reservation.status = ReservationStatus.CANCELLED
+        reservation.save(update_fields=["status"])
+
+        return "Reservation cancelled successfully."
