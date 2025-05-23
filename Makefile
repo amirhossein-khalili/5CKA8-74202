@@ -12,5 +12,8 @@ createdb:
 dropdb:
 	docker exec -it postgres_restaurant dropdb --username=postgres restaurant_db
 
+seed:
+	python manage.py seed_restaurant
+
 all:
-	make postgres   
+	make postgres
